@@ -1,13 +1,12 @@
 <php>
-</php>
 
+</php>
 
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" href="ruta/a/tu/favicon.ico" type="image/x-icon">
   <title>Futcol</title>
   <style>
     * {
@@ -25,7 +24,7 @@
 
     /* ====== Header ====== */
     header {
-      background: #1e3a8a;
+      background: #411BE3;
       color: white;
       padding: 15px 30px;
       display: flex;
@@ -58,7 +57,7 @@
     main {
       flex: 1;
       padding: 40px;
-      background: #f3f4f6;
+      background: #FFFFFF;
     }
 
     main h2 {
@@ -67,7 +66,7 @@
 
     /* ====== Footer ====== */
     footer {
-      background: #F54928;
+      background: #83418A;
       color: white;
       text-align: center;
       padding: 15px 0;
@@ -76,19 +75,16 @@
 </head>
 <body> 
 
-    <!-- Header con menú -->
+  <!-- Header con menú -->
  <?php include("menu.php"); ?>
 
-  <!-- Contenido -->
   <main>
-    <h2>Acerca</h2>
-    <p>Esta es una pagina para que disfrutes de todas nuestras camisas futboleras.</p>
+    <h2>Bienvenidos a mi mundo web</h2>
+    <p>Esta es nuestra tienda virtual de ventas de camisas deportivas de futbol.</p>
   </main>
 
-  <!-- Footer -->
   <footer>
     <p>© 2025 realizado por Marcos Sanchez Valencia</p>
   </footer>
-
 </body>
 </html>

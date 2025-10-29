@@ -1,50 +1,61 @@
 <?php
-
 include("db/conexion.php");
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $nombre   = $_POST['nombre'];
-    $correo   = $_POST['email'];
-    $telefono = $_POST['telefono'];
-    $asunto   = $_POST['asunto'];
-    $mensaje  = $_POST['mensaje'];
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    // Sanitización de datos
+    $nombre   = htmlspecialchars(trim($_POST['nombre'] ?? ''));
+    $correo   = htmlspecialchars(trim($_POST['email'] ?? ''));
+    $telefono = htmlspecialchars(trim($_POST['telefono'] ?? ''));
+    $asunto   = htmlspecialchars(trim($_POST['asunto'] ?? ''));
+    $mensaje  = htmlspecialchars(trim($_POST['mensaje'] ?? ''));
 
+    if ($conn) {
+        $stmt = $conn->prepare("INSERT INTO formulario (nombre, correo, telefono, asunto, mensaje) VALUES (?, ?, ?, ?, ?)");
 
-  $stmt = $conn->prepare("INSERT INTO formulario (nombre, correo, telefono, asunto, mensaje) VALUES (?,?,?,?,?)");
-  $stmt->bind_param("sssss", $nombre, $correo, $telefono, $asunto, $mensaje);
+        if ($stmt) {
+            $stmt->bind_param("sssss", $nombre, $correo, $telefono, $asunto, $mensaje);
 
- if ($stmt->execute()) {
-      $msg = "✅ Tu mensaje se envió correctamente.";
-      echo "<script>document.addEventListener('DOMContentLoaded', function(){ var m = " . json_encode($msg) . ";
-      var d = document.createElement('div');
-      d.textContent = m;
-      Object.assign(d.style, {position:'fixed', left:'50%', top:'20px', transform:'translateX(-50%)', background:'#1f2937', color:'#fff', padding:'12px 18px', borderRadius:'6px', zIndex:9999, fontSize:'16px', boxShadow:'0 2px 10px rgba(0,0,0,0.2)'});
-      document.body.appendChild(d);
-      setTimeout(function(){
-        try { window.close(); } catch(e) {}
-        setTimeout(function(){
-        if (!window.closed) { window.location = 'Inicio.php'; }
-        }, 200);
-      }, 3000);
-      });</script>";
+            if ($stmt->execute()) {
+                $msg = "✅ Tu mensaje se envió correctamente.";
+            } else {
+                $msg = "❌ Error al enviar el mensaje: " . htmlspecialchars($stmt->error);
+            }
+
+            $stmt->close();
+        } else {
+            $msg = "❌ Error al preparar la consulta: " . htmlspecialchars($conn->error);
+        }
+
+        $conn->close();
     } else {
-      $err = "❌ Error: " . $stmt->error;
-      echo "<script>document.addEventListener('DOMContentLoaded', function(){ var m = " . json_encode($err) . ";
-      var d = document.createElement('div');
-      d.textContent = m;
-      Object.assign(d.style, {position:'fixed', left:'50%', top:'20px', transform:'translateX(-50%)', background:'#7f1d1d', color:'#fff', padding:'12px 18px', borderRadius:'6px', zIndex:9999, fontSize:'16px', boxShadow:'0 2px 10px rgba(0,0,0,0.2)'});
-      document.body.appendChild(d);
-      setTimeout(function(){
-        try { window.close(); } catch(e) {}
-        setTimeout(function(){
-        if (!window.closed) { window.location = 'Inicio.php'; }
-        }, 200);
-      }, 3000);
-      });</script>";
+        $msg = "❌ Error de conexión con la base de datos.";
     }
-   } 
-?>
 
+    // Mostrar mensaje con JavaScript y redirección
+    echo "<script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var m = " . json_encode($msg) . ";
+            var d = document.createElement('div');
+            d.textContent = m;
+            Object.assign(d.style, {
+                position:'fixed', left:'50%', top:'20px', transform:'translateX(-50%)',
+                background:m.startsWith('✅') ? '#1f2937' : '#7f1d1d',
+                color:'#fff', padding:'12px 18px', borderRadius:'6px',
+                zIndex:9999, fontSize:'16px', boxShadow:'0 2px 10px rgba(0,0,0,0.2)'
+            });
+            document.body.appendChild(d);
+
+            setTimeout(function(){
+                if (window.opener) {
+                    window.close();
+                } else {
+                    window.location = 'Inicio.php';
+                }
+            }, 3000);
+        });
+    </script>";
+}
+?>
 
 <!DOCTYPE html>
 <html lang="es">
@@ -54,85 +65,36 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
   <link rel="icon" href="ruta/a/tu/favicon.ico" type="image/x-icon">
   <title>Futcol</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: Arial, sans-serif;
-    }
-
-    body {
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-
-    /* ====== Header ====== */
-    header {
-      background: #1e3a8a;
-      color: white;
-      padding: 15px 30px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    header h1 {
-      font-size: 22px;
-    }
-
-    nav ul {
-      list-style: none;
-      display: flex;
-      gap: 20px;
-    }
-
-    nav a {
-      color: white;
-      text-decoration: none;
-      font-weight: bold;
-      transition: 0.3s;
-    }
-
-    nav a:hover {
-      color: #facc15;
-    }
-
-    /* ====== Contenido principal ====== */
-    main {
-      flex: 1;
-      padding: 40px;
-      background: #f3f4f6;
-    }
-
-    main h2 {
-      margin-bottom: 15px;
-    }
-
-    /* ====== Footer ====== */
-    footer {
-      background: #F54928;
-      color: white;
-      text-align: center;
-      padding: 15px 0;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+    body { display: flex; flex-direction: column; min-height: 100vh; }
+    header { background: #1e3a8a; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { font-size: 22px; }
+    nav ul { list-style: none; display: flex; gap: 20px; }
+    nav a { color: white; text-decoration: none; font-weight: bold; transition: 0.3s; }
+    nav a:hover { color: #facc15; }
+    main { flex: 1; padding: 40px; background: #f3f4f6; }
+    footer { background: #F54928; color: white; text-align: center; padding: 15px 0; }
+    .contact-container { max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
+    label { font-weight: bold; margin-bottom: 5px; }
+    input, textarea { padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+    .action { display: flex; justify-content: space-between; margin-top: 10px; }
+    .btn { padding: 10px 20px; border: none; cursor: pointer; border-radius: 5px; }
+    .btn-primary { background: #1e3a8a; color: #fff; }
+    .btn-secondary { background: #6b7280; color: #fff; }
   </style>
 </head>
-<body> 
+<body>
 
-  <!-- Header con menú -->
- <?php include("menu.php"); ?>
+  <?php include("menu.php"); ?>
 
-  <!-- Contenido -->
   <main>
-   <div class="contact-container">
-    <h2>contacto</h2>
+    <div class="contact-container">
+      <h2>Contacto</h2>
 
-    <!--Formulario: ajusta action y method según tu backend -->
-    <form action="contacto.php" method="post" novalidate>
-      <div class="form-grid">
+      <form class="contact-form" action="contacto.php" method="post" novalidate>
         <div class="form-group">
-          <label for="nombr"> Nombre completp</label>label>
+          <label for="nombre">Nombre completo</label>
           <input id="nombre" name="nombre" type="text" placeholder="Tu nombre" required>
         </div>
 
@@ -140,78 +102,69 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
           <label for="email">Correo electrónico</label>
           <input id="email" name="email" type="email" placeholder="tucorreo@ejemplo.com" required>
         </div>
-        
-                <div class="form-group">
-                  <label for="telefono">Telefono (opcional)</label>
-                  <input id="telefono" name="asunto" type="text" placeholder="+34 600 000 000">
-                </div>
 
-                <div class="form-group">
-                  <label for="asunto">Asunto</label>
-                  <input id="asunto" name="asunto" type="text" placeholder="Breve resumen" required>
-                </div>
-                <div class="form-group" style="grid-column: 1 / -1;">
-                  <label for="mensaje">Mensaje</label>
-                  <textarea id="mensaje" name="mensaje" placeholder="Escribe tu mensaje..."required></textarea>
-                  <div class="hint">Maximo 2000 caracteres.</div>
-                </div>
-              <div class="action">
-                <button type="reset" class="btn btn-secondary">limpiar</button>
-                <button type="submit" class="btn btn-primary">Enviar mensaje</button>
-              </div>
-            </form>
-          </div>
-        </main>
+        <div class="form-group">
+          <label for="telefono">Teléfono (opcional)</label>
+          <input id="telefono" name="telefono" type="text" placeholder="+34 600 000 000">
+        </div>
 
+        <div class="form-group">
+          <label for="asunto">Asunto</label>
+          <input id="asunto" name="asunto" type="text" placeholder="Breve resumen" required>
+        </div>
 
+        <div class="form-group">
+          <label for="mensaje">Mensaje</label>
+          <textarea id="mensaje" name="mensaje" placeholder="Escribe tu mensaje..." maxlength="2000" required></textarea>
+          <div id="counter" class="hint">0 / 2000</div>
+        </div>
 
-  <!-- Footer -->
+        <div class="action">
+          <button type="reset" class="btn btn-secondary" id="resetBtn">Limpiar</button>
+          <button type="submit" class="btn btn-primary" id="submitBtn">Enviar mensaje</button>
+        </div>
+      </form>
+    </div>
+  </main>
+
   <footer>
-    <p>© 2025 realizado por Marcos Sanchez Valencia</p>
+    <p>© 2025 Realizado por Marcos Sánchez Valencia</p>
   </footer>
-<script>
-      (function(){
-        var mensaje = document.getElementById('mensaje');
-        var counter = document.getElementById('counter');
-        var form = document.querySelector('.contact-form');
-        var submit = document.getElementById('submitBtn');
 
-        function updateCount(){
-          var len = mensaje.value.length;
-          counter.textContent = len + ' / ' + (mensaje.maxLength || 2000);
-          if(len > (mensaje.maxLength - 20)){
-            counter.style.color = '#b45309';
-          } else {
-            counter.style.color = '';
-          }
+  <script>
+    (function() {
+      const mensaje = document.getElementById('mensaje');
+      const counter = document.getElementById('counter');
+      const form = document.querySelector('.contact-form');
+      const submit = document.getElementById('submitBtn');
+
+      function updateCount() {
+        const len = mensaje.value.length;
+        counter.textContent = len + ' / ' + (mensaje.maxLength || 2000);
+        counter.style.color = len > mensaje.maxLength - 20 ? '#b45309' : '';
+      }
+
+      mensaje.addEventListener('input', updateCount);
+      updateCount();
+
+      form.addEventListener('submit', function(e) {
+        if (!form.checkValidity()) {
+          e.preventDefault();
+          const firstInvalid = form.querySelector(':invalid');
+          if (firstInvalid) firstInvalid.focus();
+          submit.textContent = 'Corrige los campos';
+          setTimeout(() => submit.textContent = 'Enviar mensaje', 1800);
+        } else {
+          submit.disabled = true;
+          submit.style.opacity = '.7';
+          setTimeout(() => { submit.disabled = false; submit.style.opacity = ''; }, 3000);
         }
-        mensaje.addEventListener('input', updateCount);
-        updateCount();
+      });
 
-        // simple client-side validation feedback
-        form.addEventListener('submit', function(e){
-          if(!form.checkValidity()){
-            e.preventDefault();
-            // focus first invalid
-            var firstInvalid = form.querySelector(':invalid');
-            if(firstInvalid) firstInvalid.focus();
-            // visual hint
-            submit.textContent = 'Corrige los campos';
-            setTimeout(function(){ submit.textContent = 'Enviar mensaje'; }, 1800);
-          } else {
-            // prevent double submit UX: disable button briefly while submitting
-            submit.disabled = true;
-            submit.style.opacity = '.7';
-            setTimeout(function(){ submit.disabled = false; submit.style.opacity = ''; }, 3000);
-          }
-        });
-
-        // reset handler
-        document.getElementById('resetBtn').addEventListener('click', function(){
-          setTimeout(updateCount, 10);
-        });
-      })();
-    </script>
+      document.getElementById('resetBtn').addEventListener('click', () => {
+        setTimeout(updateCount, 10);
+      });
+    })();
+  </script>
 </body>
 </html>
- 
